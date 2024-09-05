@@ -4152,6 +4152,7 @@ target_link_libraries(grpc++
 )
 
 foreach(_hdr
+  include/grpc++/ddb_integration.h # ddb support
   include/grpc++/alarm.h
   include/grpc++/channel.h
   include/grpc++/client_context.h

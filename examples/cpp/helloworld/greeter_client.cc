@@ -24,6 +24,7 @@
 #include "absl/flags/parse.h"
 
 #include <grpcpp/grpcpp.h>
+#include <grpcpp/ddb_integration.h>
 
 #ifdef BAZEL_BUILD
 #include "examples/protos/helloworld.grpc.pb.h"

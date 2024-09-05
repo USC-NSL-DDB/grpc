@@ -25,8 +25,8 @@
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/status.h>
 
-#include "ddb/backtrace.h"
-#include "ddb/archive.hpp"
+#include <ddb/backtrace.h>
+#include <ddb/archive.hpp>
 
 namespace grpc {
 

@@ -80,8 +80,8 @@
 #include "src/cpp/server/health/default_health_check_service.h"
 #include "src/cpp/thread_manager/thread_manager.h"
 
-#include "ddb/backtrace.h"
-#include "ddb/archive.hpp"
+#include <ddb/backtrace.h>
+#include <ddb/archive.hpp>
 
 namespace grpc {
 namespace {
