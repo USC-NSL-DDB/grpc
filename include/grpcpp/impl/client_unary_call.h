@@ -25,6 +25,9 @@
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/status.h>
 
+#include "ddb/backtrace.h"
+#include "ddb/archive.hpp"
+
 namespace grpc {
 
 class ClientContext;
@@ -69,6 +72,11 @@ class BlockingUnaryCallImpl {
     if (!status_.ok()) {
       return;
     }
+    DDBTraceMeta meta;
+    get_trace_meta(&meta);
+    std::cout << "sender pid: " << meta.meta.pid;
+    auto data = DDB::serialize(meta);
+    context->AddMetadata("bt_meta", data);
     ops.SendInitialMetadata(&context->send_initial_metadata_,
                             context->initial_metadata_flags());
     ops.RecvInitialMetadata(context);
