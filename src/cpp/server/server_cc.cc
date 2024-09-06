@@ -81,7 +81,8 @@
 #include "src/cpp/thread_manager/thread_manager.h"
 
 #include <ddb/backtrace.h>
-#include <ddb/bin_archiver.hpp>
+// #include <ddb/bin_archiver.hpp>
+#include <ddb/str_archiver.hpp>
 
 namespace grpc {
 namespace {
@@ -422,17 +423,6 @@ class Server::SyncRequest final : public grpc::internal::CompletionQueueTag {
 
   void Run(const std::shared_ptr<GlobalCallbacks>& global_callbacks,
            bool resources) {
-    grpc::string_ref __attribute__((used)) stack_metadata;
-    for (int i=0;i<request_metadata_.count;i++){
-        auto key=StringRefFromSlice(&request_metadata_.metadata[i].key);
-        auto value=StringRefFromSlice(&request_metadata_.metadata[i].value);
-        if(strcmp(key.data(),"bt_meta")==0){
-            stack_metadata=value;
-            break;
-        }
-    }
-    volatile __attribute__((used)) DDBTraceMeta meta = DDB::deserialize_from_bin(std::string(stack_metadata.data()));
-    // std::cout << "pid: " << meta.meta.pid;
     ctx_.Init(deadline_, &request_metadata_);
     wrapped_call_.Init(
         call_, server_, &cq_, server_->max_receive_message_size(),
@@ -466,6 +456,19 @@ class Server::SyncRequest final : public grpc::internal::CompletionQueueTag {
       interceptor_methods_.AddInterceptionHookPoint(
           grpc::experimental::InterceptionHookPoints::POST_RECV_MESSAGE);
       interceptor_methods_.SetRecvMessage(deserialized_request_, nullptr);
+    }
+
+    std::string stack_metadata;
+    for (auto const& kv: *ctx_->ctx.client_metadata_.map()) {
+      if (kv.first == grpc::string_ref(std::string("bt_meta"))) {
+        stack_metadata = std::string(kv.second.data(), kv.second.size());
+        break;
+      }
+    }
+    if (!stack_metadata.empty()) {
+      std::cout << "server receive: " << stack_metadata << std::endl;
+      volatile __attribute__((used)) DDBTraceMeta meta = DDB::deserialize_from_str(stack_metadata);
+      std::cout << "pid: " << meta.meta.pid << std::endl;
     }
 
     if (interceptor_methods_.RunInterceptors(
