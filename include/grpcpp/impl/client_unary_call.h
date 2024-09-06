@@ -26,7 +26,7 @@
 #include <grpcpp/support/status.h>
 
 #include <ddb/backtrace.h>
-#include <ddb/archive.hpp>
+#include <ddb/bin_archiver.hpp>
 
 namespace grpc {
 
@@ -74,9 +74,11 @@ class BlockingUnaryCallImpl {
     }
     DDBTraceMeta meta;
     get_trace_meta(&meta);
-    std::cout << "sender pid: " << meta.meta.pid;
-    auto data = DDB::serialize(meta);
-    context->AddMetadata("bt_meta", data);
+    auto data = DDB::serialize_to_bin(meta);
+    context->AddMetadata("bt_remote", data);
+    // context->AddMetadata("bt_meta_magic", meta.magic);
+    // context->AddMetadata("bt_meta_", meta.ctx.rip);
+
     ops.SendInitialMetadata(&context->send_initial_metadata_,
                             context->initial_metadata_flags());
     ops.RecvInitialMetadata(context);

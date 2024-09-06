@@ -81,7 +81,7 @@
 #include "src/cpp/thread_manager/thread_manager.h"
 
 #include <ddb/backtrace.h>
-#include <ddb/archive.hpp>
+#include <ddb/bin_archiver.hpp>
 
 namespace grpc {
 namespace {
@@ -431,8 +431,8 @@ class Server::SyncRequest final : public grpc::internal::CompletionQueueTag {
             break;
         }
     }
-    volatile __attribute__((used)) DDBTraceMeta meta = DDB::deserialize(std::string(stack_metadata.data()));
-    std::cout << "pid: " << meta.meta.pid;
+    volatile __attribute__((used)) DDBTraceMeta meta = DDB::deserialize_from_bin(std::string(stack_metadata.data()));
+    // std::cout << "pid: " << meta.meta.pid;
     ctx_.Init(deadline_, &request_metadata_);
     wrapped_call_.Init(
         call_, server_, &cq_, server_->max_receive_message_size(),

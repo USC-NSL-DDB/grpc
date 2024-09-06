@@ -31,14 +31,14 @@ namespace cereal {
 
 namespace DDB
 {
-    static inline std::string serialize(const DDBTraceMeta& data) {
+    static inline std::string serialize_to_bin(const DDBTraceMeta& data) {
         std::ostringstream os(std::ios::binary);
         cereal::BinaryOutputArchive archive(os);
         archive(data);
         return os.str();
     }
 
-    static inline DDBTraceMeta deserialize(const std::string& data) {
+    static inline DDBTraceMeta deserialize_from_bin(const std::string& data) {
         DDBTraceMeta meta;
         std::istringstream is(data, std::ios::binary); 
         cereal::BinaryInputArchive archive(is);        

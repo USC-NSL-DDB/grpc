@@ -13,7 +13,6 @@ namespace DDB
 {
     class DDBConnector {
      public:
-
         inline void deinit_discovery() {
             int ret_val = service_reporter_deinit(&reporter);
             if (ret_val)
@@ -57,8 +56,7 @@ namespace DDB
      private:
         DDBServiceReporter reporter;
         bool discovery;
-    }
-    
+    };
 } // namespace DDB
 
 
