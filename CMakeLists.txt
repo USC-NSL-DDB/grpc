@@ -4374,6 +4374,19 @@ if(gRPC_INSTALL)
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
   )
+
+  # install ddb + cereal headers
+  install(
+    DIRECTORY "include/ddb"
+    DESTINATION "${gRPC_INSTALL_INCLUDEDIR}"
+    FILES_MATCHING PATTERN "*"
+  )
+
+  install(
+    DIRECTORY "include/cereal"
+    DESTINATION "${gRPC_INSTALL_INCLUDEDIR}"
+    FILES_MATCHING PATTERN "*"
+  )
 endif()
 
 
