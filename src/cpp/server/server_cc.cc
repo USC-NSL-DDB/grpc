@@ -80,10 +80,6 @@
 #include "src/cpp/server/health/default_health_check_service.h"
 #include "src/cpp/thread_manager/thread_manager.h"
 
-#include <ddb/backtrace.h>
-// #include <ddb/bin_archiver.hpp>
-#include <ddb/str_archiver.hpp>
-
 namespace grpc {
 namespace {
 
@@ -456,19 +452,6 @@ class Server::SyncRequest final : public grpc::internal::CompletionQueueTag {
       interceptor_methods_.AddInterceptionHookPoint(
           grpc::experimental::InterceptionHookPoints::POST_RECV_MESSAGE);
       interceptor_methods_.SetRecvMessage(deserialized_request_, nullptr);
-    }
-
-    std::string stack_metadata;
-    for (auto const& kv: *ctx_->ctx.client_metadata_.map()) {
-      if (kv.first == grpc::string_ref(std::string("bt_meta"))) {
-        stack_metadata = std::string(kv.second.data(), kv.second.size());
-        break;
-      }
-    }
-    if (!stack_metadata.empty()) {
-      std::cout << "server receive: " << stack_metadata << std::endl;
-      volatile __attribute__((used)) DDBTraceMeta meta = DDB::deserialize_from_str(stack_metadata);
-      std::cout << "pid: " << meta.meta.pid << std::endl;
     }
 
     if (interceptor_methods_.RunInterceptors(

@@ -27,6 +27,9 @@
 #include <grpcpp/support/byte_buffer.h>
 #include <grpcpp/support/sync_stream.h>
 
+#include <ddb/backtrace.h>
+#include <ddb/str_archiver.hpp>
+
 namespace grpc {
 
 namespace internal {
@@ -111,11 +114,41 @@ class RpcMethodHandler : public grpc::internal::MethodHandler {
     ResponseType rsp;
     grpc::Status status = param.status;
     if (status.ok()) {
-      status = CatchingFunctionHandler([this, &param, &rsp] {
-        return func_(service_,
-                     static_cast<grpc::ServerContext*>(param.server_context),
-                     static_cast<RequestType*>(param.request), &rsp);
-      });
+      auto s_context = static_cast<grpc::ServerContext*>(param.server_context);
+      auto rpc_handler_wrapper = [this, &s_context, &param, &rsp]() -> ::grpc::Status {
+        return CatchingFunctionHandler([this, &s_context, &param, &rsp] {
+          return func_(
+            service_,
+            s_context,
+            static_cast<RequestType*>(param.request), 
+            &rsp
+          );
+        });
+      };
+
+      status = DDB::Backtrace::extraction<::grpc::Status>(
+        [&s_context]() -> DDBTraceMeta {
+          auto& client_meta = s_context->client_metadata();
+          std::string stack_metadata;
+          for (auto const& kv: client_meta) {
+            if (kv.first == grpc::string_ref(std::string("bt_meta"))) {
+              stack_metadata = std::string(kv.second.data(), kv.second.size());
+              break;
+            }
+          }
+          DDBTraceMeta meta;
+          if (!stack_metadata.empty()) {
+            meta = DDB::deserialize_from_str(stack_metadata);
+          }
+          return meta;
+        },
+        rpc_handler_wrapper
+      );
+      // status = CatchingFunctionHandler([this, &param, &rsp] {
+      //   return func_(service_,
+      //                static_cast<grpc::ServerContext*>(param.server_context),
+      //                static_cast<RequestType*>(param.request), &rsp);
+      // });
       static_cast<RequestType*>(param.request)->~RequestType();
     }
     UnaryRunHandlerHelper(param, static_cast<BaseResponseType*>(&rsp), status);

@@ -73,12 +73,9 @@ class BlockingUnaryCallImpl {
     if (!status_.ok()) {
       return;
     }
-    DDBTraceMeta meta;
+    DDBTraceMeta meta; // ddb integration - client side
     get_trace_meta(&meta);
-    auto data = DDB::serialize_to_str(meta);
-    std::cout << "str to send: " << data << std::endl;
-    context->AddMetadata("bt_meta", data);
-
+    context->AddMetadata("bt_meta", std::move(DDB::serialize_to_str(meta)));
     ops.SendInitialMetadata(&context->send_initial_metadata_,
                             context->initial_metadata_flags());
     ops.RecvInitialMetadata(context);
