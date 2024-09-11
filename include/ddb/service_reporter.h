@@ -11,7 +11,7 @@ extern "C" {
 #include <unistd.h>
 #include <MQTTClient.h>
 
-#define ADDRESS     "tcp://10.10.2.1:10101"
+#define ADDRESS     "tcp://10.10.1.2:10101"
 #define CLIENTID    "service_reporter"
 #define T_SERVICE_DISCOVERY "service_discovery/report"
 #define QOS         1 // at least once

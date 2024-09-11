@@ -81,7 +81,7 @@ int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
 
   auto connector = DDB::DDBConnector();
-  connector.init("enp94s0f0", false);
+  connector.init("enp94s0f0", true);
 
   // Instantiate the client. It requires a channel, out of which the actual RPCs
   // are created. This channel models a connection to an endpoint specified by

@@ -81,7 +81,7 @@ int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
 
   auto connector = DDB::DDBConnector();
-  connector.init("enp94s0f0", false);
+  connector.init("enp94s0f0", true);
 
   RunServer(absl::GetFlag(FLAGS_port));
   return 0;
