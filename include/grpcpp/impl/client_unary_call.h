@@ -25,8 +25,7 @@
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/status.h>
 
-#include <ddb/backtrace.h>
-// #include <ddb/bin_archiver.hpp>
+#include <ddb/backtrace.hpp>
 #include <ddb/str_archiver.hpp>
 
 namespace grpc {
@@ -73,8 +72,8 @@ class BlockingUnaryCallImpl {
     if (!status_.ok()) {
       return;
     }
-    DDBTraceMeta meta; // ddb integration - client side
-    get_trace_meta(&meta);
+    DDB::DDBTraceMeta meta; // ddb integration - client side
+    DDB::get_trace_meta(&meta);
     context->AddMetadata("bt_meta", std::move(DDB::serialize_to_str(meta)));
     ops.SendInitialMetadata(&context->send_initial_metadata_,
                             context->initial_metadata_flags());

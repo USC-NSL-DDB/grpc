@@ -27,7 +27,7 @@
 #include <grpcpp/support/byte_buffer.h>
 #include <grpcpp/support/sync_stream.h>
 
-#include <ddb/backtrace.h>
+#include <ddb/backtrace.hpp>
 #include <ddb/str_archiver.hpp>
 
 namespace grpc {
@@ -127,7 +127,7 @@ class RpcMethodHandler : public grpc::internal::MethodHandler {
       };
 
       status = DDB::Backtrace::extraction<::grpc::Status>(
-        [&s_context]() -> DDBTraceMeta {
+        [&s_context]() -> DDB::DDBTraceMeta {
           auto& client_meta = s_context->client_metadata();
           std::string stack_metadata;
           for (auto const& kv: client_meta) {
@@ -136,7 +136,7 @@ class RpcMethodHandler : public grpc::internal::MethodHandler {
               break;
             }
           }
-          DDBTraceMeta meta;
+          DDB::DDBTraceMeta meta;
           if (!stack_metadata.empty()) {
             meta = DDB::deserialize_from_str(stack_metadata);
           }

@@ -4226,7 +4226,6 @@ foreach(_hdr
   include/grpc++/support/stub_options.h
   include/grpc++/support/sync_stream.h
   include/grpc++/support/time.h
-  include/grpcpp/ddb_integration.h # ddb support
   include/grpcpp/alarm.h
   include/grpcpp/channel.h
   include/grpcpp/client_context.h

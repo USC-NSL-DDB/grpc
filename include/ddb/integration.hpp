@@ -1,13 +1,13 @@
-#ifndef DDB_INTEGRATION_H
-#define DDB_INTEGRATION_H
+#pragma once
 
 #include <iostream>
 #include <string>
+#include <unistd.h> 
 
 #define DEFINE_DDB_META
-#include <ddb/common.h>
-#include <ddb/basic.h>
-#include <ddb/service_reporter.h>
+#include <ddb/common.hpp>
+#include <ddb/basic.hpp>
+#include <ddb/service_reporter.hpp>
 
 namespace DDB
 {
@@ -41,8 +41,8 @@ namespace DDB
             this->discovery = true;
         }
 
-        inline void init(const std::string& iface, bool enable_discovery = true) {
-            populate_ddb_metadata(iface.c_str());
+        inline void init(const std::string& ipv4, bool enable_discovery = true) {
+            populate_ddb_metadata(ipv4);
             if (enable_discovery)
                 this->init_discovery();
             this->discovery = enable_discovery;
@@ -58,21 +58,3 @@ namespace DDB
         bool discovery;
     };
 } // namespace DDB
-
-
-namespace 
-{
-    struct Initializer {
-
-        Initializer() {
-
-        }
-
-        ~Initializer() {
-        }
-    };
-
-    inline Initializer global_init;
-} 
-
-#endif  // DDB_INTEGRATION_H

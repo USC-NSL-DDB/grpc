@@ -25,9 +25,10 @@
 #include "absl/flags/parse.h"
 #include "absl/strings/str_format.h"
 
+#include <ddb/integration.hpp>
+
 #include <grpcpp/ext/proto_server_reflection_plugin.h>
 #include <grpcpp/grpcpp.h>
-#include <grpcpp/ddb_integration.h>
 #include <grpcpp/health_check_service_interface.h>
 
 #ifdef BAZEL_BUILD
@@ -81,7 +82,7 @@ int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
 
   auto connector = DDB::DDBConnector();
-  connector.init("enp94s0f0", true);
+  connector.init("10.10.1.2", true);
 
   RunServer(absl::GetFlag(FLAGS_port));
   return 0;
