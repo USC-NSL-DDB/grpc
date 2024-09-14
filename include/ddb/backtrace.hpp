@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <functional>
 
-#include <ddb/common.hpp>
+#include "ddb/common.hpp"
 
 /// @brief  Added magic number for testing DDBTraceMeta 
 #define T_META_MATIC 12345ULL
