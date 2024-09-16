@@ -36,10 +36,19 @@ struct DDBCallerMeta {
   pid_t pid = 0;
 };
 
+// struct DDBCallerContext {
+//   uintptr_t rip = 0;
+//   uintptr_t rsp = 0;
+//   uintptr_t rbp = 0;
+// };
+
 struct DDBCallerContext {
-  uintptr_t rip = 0;
-  uintptr_t rsp = 0;
-  uintptr_t rbp = 0;
+  uintptr_t pc;  // Program Counter
+  uintptr_t sp;  // Stack Pointer
+  uintptr_t fp;  // Frame Pointer
+  #ifdef __aarch64__
+  uintptr_t lr;  // Link Register (only on ARM64)
+  #endif
 };
 
 /// @brief  Added data structure for backtrace
@@ -50,18 +59,38 @@ struct DDBTraceMeta {
 };
 
 static inline __attribute__((always_inline)) void get_context(DDBCallerContext* ctx) { 
-  void *rsp;
-  void *rbp;
+  // void *rsp;
+  // void *rbp;
 
-  // Fetch the current stack pointer (RSP)
-  asm volatile ("mov %%rsp, %0" : "=r" (rsp));
+  // // Fetch the current stack pointer (RSP)
+  // asm volatile ("mov %%rsp, %0" : "=r" (rsp));
 
-  // Fetch the current base pointer (RBP)
-  asm volatile ("mov %%rbp, %0" : "=r" (rbp));
+  // // Fetch the current base pointer (RBP)
+  // asm volatile ("mov %%rbp, %0" : "=r" (rbp));
 
-  ctx->rsp = (uintptr_t) rsp;
-  ctx->rip = (uintptr_t) __builtin_return_address(0); // Approximation to get RIP
-  ctx->rbp = (uintptr_t) rbp;
+  // ctx->sp = (uintptr_t) rsp;
+  // ctx->pc = (uintptr_t) __builtin_return_address(0); // Approximation to get RIP
+  // ctx->fp = (uintptr_t) rbp;
+
+  void* sp;
+#if defined(__x86_64__)
+  asm volatile("mov %%rsp, %0" : "=r" (sp));
+#elif defined(__aarch64__)
+  asm volatile("mov %0, sp" : "=r" (sp));
+#else
+  #error "Unsupported architecture"
+#endif
+
+  ctx->sp = (uintptr_t) sp;
+  ctx->pc = (uintptr_t) __builtin_return_address(0);
+  ctx->fp = (uintptr_t) __builtin_frame_address(0);
+
+#ifdef __aarch64__
+  // For Link Register on ARM64, we still need inline assembly
+  void *lr;
+  asm volatile ("mov %0, x30" : "=r" (lr));
+  ctx->lr = (uintptr_t)lr;
+#endif
 }
 
 static inline __attribute__((always_inline)) void __get_caller_meta(DDBCallerMeta* meta) {
