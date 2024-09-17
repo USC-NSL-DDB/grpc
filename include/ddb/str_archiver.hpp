@@ -31,9 +31,9 @@ namespace DDB{
             !(iss >> trace.magic >> comma
             >> trace.meta.caller_comm_ip >> comma
             >> trace.meta.pid >> comma
-            >> trace.ctx.pc>> comma
+            >> trace.ctx.pc >> comma
             >> trace.ctx.sp >> comma
-            >> trace.ctx.sp)
+            >> trace.ctx.fp)
         ) {
             throw std::invalid_argument("Failed to deserialize caller context.");
         }

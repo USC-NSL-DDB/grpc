@@ -45,11 +45,11 @@ struct DDBCallerMeta {
 // };
 
 struct DDBCallerContext {
-  uintptr_t pc;  // Program Counter
-  uintptr_t sp;  // Stack Pointer
-  uintptr_t fp;  // Frame Pointer
+  uintptr_t pc = 0;  // Program Counter
+  uintptr_t sp = 0;  // Stack Pointer
+  uintptr_t fp = 0;  // Frame Pointer
   #ifdef __aarch64__
-  uintptr_t lr;  // Link Register (only on ARM64)
+  uintptr_t lr = 0;  // Link Register (only on ARM64)
   #endif
 };
 
@@ -61,18 +61,18 @@ struct DDBTraceMeta {
 };
 
 static inline __attribute__((always_inline)) void get_context(DDBCallerContext* ctx) { 
-  void *rsp;
-  void *rbp;
+  // void *rsp;
+  // void *rbp;
 
-  // Fetch the current stack pointer (RSP)
-  asm volatile ("mov %%rsp, %0" : "=r" (rsp));
+  // // Fetch the current stack pointer (RSP)
+  // asm volatile ("mov %%rsp, %0" : "=r" (rsp));
 
-  // Fetch the current base pointer (RBP)
-  asm volatile ("mov %%rbp, %0" : "=r" (rbp));
+  // // Fetch the current base pointer (RBP)
+  // asm volatile ("mov %%rbp, %0" : "=r" (rbp));
 
-  uintptr_t _rsp = (uintptr_t) rsp;
-  uintptr_t _rip = (uintptr_t) __builtin_return_address(0); // Approximation to get RIP
-  uintptr_t _rbp = (uintptr_t) rbp;
+  // uintptr_t _rsp = (uintptr_t) rsp;
+  // uintptr_t _rip = (uintptr_t) __builtin_return_address(0); // Approximation to get RIP
+  // uintptr_t _rbp = (uintptr_t) rbp;
 
   void* sp;
 #if defined(__x86_64__)
@@ -94,8 +94,8 @@ static inline __attribute__((always_inline)) void get_context(DDBCallerContext* 
   ctx->lr = (uintptr_t)lr;
 #endif
 
-  std::cout << "rsp = " << _rsp << ", rip = " << _rip << ", rbp = " << _rbp << std::endl;
-  std::cout << "sp = " << ctx->sp << ", pc = " << ctx->pc << ", fp = " << ctx->fp << std::endl;
+  // std::cout << "rsp = " << _rsp << ", rip = " << _rip << ", rbp = " << _rbp << std::endl;
+  // std::cout << "sp = " << ctx->sp << ", pc = " << ctx->pc << ", fp = " << ctx->fp << std::endl;
 }
 
 static inline __attribute__((always_inline)) void __get_caller_meta(DDBCallerMeta* meta) {
