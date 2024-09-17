@@ -1,5 +1,7 @@
 #pragma once
 
+#include <iostream>
+
 #include <string>
 #include <cstdint>
 #include <sched.h>
@@ -59,18 +61,18 @@ struct DDBTraceMeta {
 };
 
 static inline __attribute__((always_inline)) void get_context(DDBCallerContext* ctx) { 
-  // void *rsp;
-  // void *rbp;
+  void *rsp;
+  void *rbp;
 
-  // // Fetch the current stack pointer (RSP)
-  // asm volatile ("mov %%rsp, %0" : "=r" (rsp));
+  // Fetch the current stack pointer (RSP)
+  asm volatile ("mov %%rsp, %0" : "=r" (rsp));
 
-  // // Fetch the current base pointer (RBP)
-  // asm volatile ("mov %%rbp, %0" : "=r" (rbp));
+  // Fetch the current base pointer (RBP)
+  asm volatile ("mov %%rbp, %0" : "=r" (rbp));
 
-  // ctx->sp = (uintptr_t) rsp;
-  // ctx->pc = (uintptr_t) __builtin_return_address(0); // Approximation to get RIP
-  // ctx->fp = (uintptr_t) rbp;
+  uintptr_t _rsp = (uintptr_t) rsp;
+  uintptr_t _rip = (uintptr_t) __builtin_return_address(0); // Approximation to get RIP
+  uintptr_t _rbp = (uintptr_t) rbp;
 
   void* sp;
 #if defined(__x86_64__)
@@ -91,6 +93,9 @@ static inline __attribute__((always_inline)) void get_context(DDBCallerContext* 
   asm volatile ("mov %0, x30" : "=r" (lr));
   ctx->lr = (uintptr_t)lr;
 #endif
+
+  std::cout << "rsp = " << _rsp << ", rip = " << _rip << ", rbp = " << _rbp << std::endl;
+  std::cout << "sp = " << ctx->sp << ", pc = " << ctx->pc << ", fp = " << ctx->fp << std::endl;
 }
 
 static inline __attribute__((always_inline)) void __get_caller_meta(DDBCallerMeta* meta) {
