@@ -60,6 +60,29 @@ struct DDBTraceMeta {
   DDBCallerContext ctx;
 };
 
+static __attribute__((noinline)) uintptr_t get_pc() {
+  // essentially return the return address of this function
+  // to get the PC (program counter) at the caller position.
+  // NOTE: noinline should be enforced to create a stack frame here.
+  return reinterpret_cast<uintptr_t>(__builtin_return_address(0));
+}
+
+static inline __attribute((always_inline)) uintptr_t get_sp() {
+  void* sp;
+#if defined(__x86_64__)
+  asm volatile("mov %%rsp, %0" : "=r" (sp));
+#elif defined(__aarch64__)
+  asm volatile("mov %0, sp" : "=r" (sp));
+#else
+  #error "Unsupported architecture"
+#endif
+  return reinterpret_cast<uintptr_t>(sp);
+}
+
+static inline __attribute((always_inline)) uintptr_t get_fp() {
+  return reinterpret_cast<uintptr_t>(__builtin_frame_address(0));
+}
+
 static inline __attribute__((always_inline)) void get_context(DDBCallerContext* ctx) { 
   // void *rsp;
   // void *rbp;
@@ -74,28 +97,21 @@ static inline __attribute__((always_inline)) void get_context(DDBCallerContext* 
   // uintptr_t _rip = (uintptr_t) __builtin_return_address(0); // Approximation to get RIP
   // uintptr_t _rbp = (uintptr_t) rbp;
 
-  void* sp;
-#if defined(__x86_64__)
-  asm volatile("mov %%rsp, %0" : "=r" (sp));
-#elif defined(__aarch64__)
-  asm volatile("mov %0, sp" : "=r" (sp));
-#else
-  #error "Unsupported architecture"
-#endif
-
-  ctx->sp = (uintptr_t) sp;
-  ctx->pc = (uintptr_t) __builtin_return_address(0);
-  ctx->fp = (uintptr_t) __builtin_frame_address(0);
+  ctx->sp = get_sp();
+  ctx->pc = get_pc();
+  ctx->fp = get_fp();
+  // ctx->pc = (uintptr_t) __builtin_return_address(0);
+  // ctx->fp = (uintptr_t) __builtin_frame_address(0);
 
 #ifdef __aarch64__
-  // For Link Register on ARM64, we still need inline assembly
+  // Grab link register at ARM64, not sure if this is useful...
   void *lr;
   asm volatile ("mov %0, x30" : "=r" (lr));
   ctx->lr = (uintptr_t)lr;
 #endif
 
   // std::cout << "rsp = " << _rsp << ", rip = " << _rip << ", rbp = " << _rbp << std::endl;
-  // std::cout << "sp = " << ctx->sp << ", pc = " << ctx->pc << ", fp = " << ctx->fp << std::endl;
+  std::cout << "sp = " << ctx->sp << ", pc = " << ctx->pc << ", fp = " << ctx->fp << std::endl;
 }
 
 static inline __attribute__((always_inline)) void __get_caller_meta(DDBCallerMeta* meta) {
