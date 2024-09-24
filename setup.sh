@@ -1,6 +1,6 @@
 #!/bin/bash
 
-udo apt-get update
+sudo apt-get update
 sudo apt-get install -y build-essential gcc autoconf libtool pkg-config make cmake cmake-gui cmake-curses-gui git
 
 sudo apt-add-repository -y ppa:mosquitto-dev/mosquitto-ppa
