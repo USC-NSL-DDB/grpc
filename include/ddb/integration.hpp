@@ -17,6 +17,28 @@ namespace DDB
 {
     static int SIGDDBWAIT = 40; // re-use real-time signal for ddb needs
 
+    struct Config {
+        std::string ipv4;
+        bool auto_discovery;
+        bool wait_for_attach;
+
+        static Config get_default(const std::string& ipv4) {
+            return Config {
+                .ipv4 = ipv4,
+                .auto_discovery = true,
+                .wait_for_attach = true
+            };
+        }
+
+        static Config get_default() {
+            return Config {
+                .ipv4 = DDB::uint32_to_ipv4(DDB::get_ipv4_from_local()),
+                .auto_discovery = true,
+                .wait_for_attach = true
+            };
+        }
+    };
+
     static inline void block_signal(int sig) {
         sigset_t set;
         sigemptyset(&set);
@@ -66,6 +88,53 @@ namespace DDB
 
     class DDBConnector {
      public:
+        inline void init() {
+            populate_ddb_metadata(this->config.ipv4);
+            if (this->config.auto_discovery) {
+                this->init_discovery();
+            } else {
+                setup_ddb_signal_handler();
+            }
+            std::cout << "ddb connector initialized. meta = { pid = " 
+                    << DDB::ddb_meta.pid << ", comm_ip = " 
+                    << DDB::ddb_meta.comm_ip << ", ipv4_str =" 
+                    << DDB::ddb_meta.ipv4_str << " }" 
+                    << std::endl;
+        }
+
+        DDBConnector() { this->config = Config::get_default(); }
+        DDBConnector(Config config): config(config) {};
+        DDBConnector(const std::string& ipv4, bool enable_discovery = true) {
+            auto config = Config::get_default(ipv4);
+            config.auto_discovery = enable_discovery;
+            this->config = config;
+        }
+        DDBConnector(const std::string& ipv4, bool enable_discovery = true, bool wait_for_attach = true) {
+            auto config = Config::get_default(ipv4);
+            config.auto_discovery = enable_discovery;
+            config.wait_for_attach = wait_for_attach;
+            this->config = config;
+        }
+
+        ~DDBConnector() {
+            this->deinit();
+        }
+
+     private:
+        Config config;
+        DDBServiceReporter reporter;
+        // bool discovery;
+
+        static inline void wait_for_debugger() {
+            // Wait for the debugger to attach.
+            // Upon attaching, ddb shall signal SIGDDBWAIT and back to the regular flow
+            // but signal SIGDDBWAIT will resume execution, which is not what we want.
+            // this is the hack to re-trap the debuggee again.
+            block_signal(SIGDDBWAIT); 
+            wait_for_signal(SIGDDBWAIT);
+            raise(SIGTRAP); // force gdb to stop the debuggee again
+        }
+
         inline void deinit_discovery() {
             int ret_val = service_reporter_deinit(&reporter);
             if (ret_val)
@@ -73,7 +142,7 @@ namespace DDB
         }
 
         inline void deinit() {
-            if (this->discovery)
+            if (this->config.auto_discovery)
                 this->deinit_discovery();
             unblock_signal(SIGDDBWAIT);
         }
@@ -85,7 +154,7 @@ namespace DDB
                 .pid = DDB::ddb_meta.pid
             };
 
-            this->discovery = false;
+            this->config.auto_discovery = false;
             bool failure = false;
             if (service_reporter_init(&reporter) != 0) {
                 std::cerr << "failed to initialize service reporter" << std::endl;
@@ -95,48 +164,18 @@ namespace DDB
                     std::cerr << "failed to report new service" << std::endl;
                     failure = true;
                 } else {
-                    this->discovery = true;
-                    DDB::DDBConnector::wait_for_debugger();
+                    this->config.auto_discovery = false;
+                    if (this->config.wait_for_attach) {
+                        DDB::DDBConnector::wait_for_debugger();
+                    } else {
+                        setup_ddb_signal_handler();
+                    }
                 }
             }
 
             if (failure) {
                 setup_ddb_signal_handler();
             }
-        }
-
-        inline void init(const std::string& ipv4, bool enable_discovery = true) {
-            populate_ddb_metadata(ipv4);
-            if (enable_discovery) {
-                this->init_discovery();
-            } else {
-                setup_ddb_signal_handler();
-            }
-            this->discovery = enable_discovery;
-            std::cout << "ddb connector initialized. meta = { pid = " 
-                    << DDB::ddb_meta.pid << ", comm_ip = " 
-                    << DDB::ddb_meta.comm_ip << ", ipv4_str =" 
-                    << DDB::ddb_meta.ipv4_str << " }" 
-                    << std::endl;
-        }
-
-        DDBConnector() = default;
-        ~DDBConnector() {
-            this->deinit();
-        }
-
-     private:
-        DDBServiceReporter reporter;
-        bool discovery;
-
-        static inline void wait_for_debugger() {
-            // Wait for the debugger to attach.
-            // Upon attaching, ddb shall signal SIGDDBWAIT and back to the regular flow
-            // but signal SIGDDBWAIT will resume execution, which is not what we want.
-            // this is the hack to re-trap the debuggee again.
-            block_signal(SIGDDBWAIT); 
-            wait_for_signal(SIGDDBWAIT);
-            raise(SIGTRAP); // force gdb to stop the debuggee again
         }
     };
 } // namespace DDB
