@@ -5,8 +5,8 @@
 #include <csignal>
 #include <unistd.h> 
 
-#define DEFINE_DDB_META
-#include <ddb/common.hpp>
+// #define DEFINE_DDB_META
+// #include <ddb/common.hpp>
 #include <ddb/basic.hpp>
 #include <ddb/service_reporter.hpp>
 
