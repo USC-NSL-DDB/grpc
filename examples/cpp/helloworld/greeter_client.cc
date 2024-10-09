@@ -81,8 +81,8 @@ class GreeterClient {
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
 
-  auto connector = DDB::DDBConnector();
-  connector.init("10.10.1.2", true);
+  // auto connector = DDB::DDBConnector();
+  // connector.init("10.10.1.2", true);
 
   // Instantiate the client. It requires a channel, out of which the actual RPCs
   // are created. This channel models a connection to an endpoint specified by

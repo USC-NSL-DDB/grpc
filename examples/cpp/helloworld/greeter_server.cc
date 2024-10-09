@@ -81,8 +81,8 @@ void RunServer(uint16_t port) {
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
 
-  auto connector = DDB::DDBConnector();
-  connector.init("10.10.1.2", true);
+  // auto connector = DDB::DDBConnector();
+  // connector.init("10.10.1.2", true);
 
   RunServer(absl::GetFlag(FLAGS_port));
   return 0;
