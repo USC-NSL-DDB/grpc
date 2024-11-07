@@ -5,6 +5,7 @@
 #include <string>
 #include <cstdint>
 #include <sched.h>
+#include <sys/syscall.h>
 #include <unistd.h>
 #include <functional>
 
@@ -36,13 +37,14 @@ namespace DDB {
 struct DDBCallerMeta {
   uint32_t caller_comm_ip = 0;
   pid_t pid = 0;
+  pid_t tid = 0;
 };
 
-// struct DDBCallerContext {
-//   uintptr_t rip = 0;
-//   uintptr_t rsp = 0;
-//   uintptr_t rbp = 0;
-// };
+struct DDBLocalMeta {
+  uint32_t local_comm_ip = 0;
+  pid_t pid = 0;
+  pid_t tid = 0;
+};
 
 struct DDBCallerContext {
   uintptr_t pc = 0;  // Program Counter
@@ -58,6 +60,7 @@ struct DDBTraceMeta {
   uint64_t magic = 0;
   DDBCallerMeta meta;
   DDBCallerContext ctx;
+  // DDBLocalMeta local_meta;
 };
 
 static __attribute__((noinline)) uintptr_t get_pc() {
@@ -84,24 +87,9 @@ static inline __attribute((always_inline)) uintptr_t get_fp() {
 }
 
 static inline __attribute__((always_inline)) void get_context(DDBCallerContext* ctx) { 
-  // void *rsp;
-  // void *rbp;
-
-  // // Fetch the current stack pointer (RSP)
-  // asm volatile ("mov %%rsp, %0" : "=r" (rsp));
-
-  // // Fetch the current base pointer (RBP)
-  // asm volatile ("mov %%rbp, %0" : "=r" (rbp));
-
-  // uintptr_t _rsp = (uintptr_t) rsp;
-  // uintptr_t _rip = (uintptr_t) __builtin_return_address(0); // Approximation to get RIP
-  // uintptr_t _rbp = (uintptr_t) rbp;
-
   ctx->sp = get_sp();
   ctx->pc = get_pc();
   ctx->fp = get_fp();
-  // ctx->pc = (uintptr_t) __builtin_return_address(0);
-  // ctx->fp = (uintptr_t) __builtin_frame_address(0);
 
 #ifdef __aarch64__
   // Grab link register at ARM64, not sure if this is useful...
@@ -109,7 +97,6 @@ static inline __attribute__((always_inline)) void get_context(DDBCallerContext* 
   asm volatile ("mov %0, x30" : "=r" (lr));
   ctx->lr = (uintptr_t)lr;
 #endif
-
   // std::cout << "rsp = " << _rsp << ", rip = " << _rip << ", rbp = " << _rbp << std::endl;
   // std::cout << "sp = " << ctx->sp << ", pc = " << ctx->pc << ", fp = " << ctx->fp << std::endl;
 }
@@ -117,6 +104,7 @@ static inline __attribute__((always_inline)) void get_context(DDBCallerContext* 
 static inline __attribute__((always_inline)) void __get_caller_meta(DDBCallerMeta* meta) {
   meta->caller_comm_ip = ddb_meta.comm_ip;
   meta->pid = getpid();
+  meta->tid = syscall(SYS_gettid);
 }
 
 static inline __attribute__((always_inline)) void get_trace_meta(DDBTraceMeta* trace_meta) {
@@ -129,7 +117,7 @@ namespace Backtrace {
   template<typename RT = void, class RPCCallable>
   __attribute__((noinline))
   static RT extraction(std::function<DDBTraceMeta()> extractor, RPCCallable&& rpc_callable) {
-    __attribute__((used)) DDBTraceMeta meta;
+    DDBTraceMeta meta;
     if (extractor) {
       meta = extractor();
     }
