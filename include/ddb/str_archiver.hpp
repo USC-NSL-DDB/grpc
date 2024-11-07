@@ -7,12 +7,13 @@
 
 #include <ddb/backtrace.hpp>
 
-namespace DDB{
+namespace DDB {
     static inline std::string serialize_to_str(const DDBTraceMeta& data) {
         std::ostringstream oss;
         oss << data.magic << ','
             << data.meta.caller_comm_ip << ','
             << data.meta.pid << ','
+            << data.meta.tid << ','
             << data.ctx.pc << ','
             << data.ctx.sp << ','
             << data.ctx.fp;
@@ -31,6 +32,7 @@ namespace DDB{
             !(iss >> trace.magic >> comma
             >> trace.meta.caller_comm_ip >> comma
             >> trace.meta.pid >> comma
+            >> trace.meta.tid >> comma
             >> trace.ctx.pc >> comma
             >> trace.ctx.sp >> comma
             >> trace.ctx.fp)

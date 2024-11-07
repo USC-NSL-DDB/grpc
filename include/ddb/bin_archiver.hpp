@@ -1,10 +1,8 @@
 #pragma once
 
 #include <iostream>
-#include <fstream>
 
 #include "cereal/archives/binary.hpp"
-#include "cereal/types/string.hpp"
 #include "ddb/backtrace.hpp"
 
 namespace cereal {
@@ -12,6 +10,7 @@ namespace cereal {
     inline void serialize(Archive & ar, DDB::DDBCallerMeta& data) {
         ar(data.caller_comm_ip);
         ar(data.pid);
+        ar(data.tid);
     }
 
     template <class Archive>

@@ -10,7 +10,7 @@ struct DDBMetadata{
   uint32_t comm_ip = 0;
   pid_t pid = 0;
   // readable ip 
-  std::string ipv4_str = "";
+  std::string ipv4_str;
   bool initialized = false;
 };
 

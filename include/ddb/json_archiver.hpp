@@ -12,6 +12,7 @@ namespace cereal {
     inline void serialize(Archive & ar, DDB::DDBCallerMeta& data) {
         ar(cereal::make_nvp("caller_comm_ip", data.caller_comm_ip));
         ar(cereal::make_nvp("pid", data.pid));
+        ar(cereal::make_nvp("tid", data.tid));
     }
 
     template <class Archive>
