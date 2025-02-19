@@ -13,19 +13,19 @@ if [ "$1" = "setup-broker" ]; then
   sudo systemctl stop mosquitto.service
   # hack cleanup if any instance is running
   sudo pkill -9 mosquitto
-
-  TMP_FOLDER="/tmp/mosquitto"
-
-  rm -rf $TMP_FOLDER
-  mkdir -p $TMP_FOLDER
-  pushd $TMP_FOLDER
-  git clone https://github.com/eclipse/paho.mqtt.c.git
-  cd paho.mqtt.c
-  make -j$(nproc)
-  sudo make uninstall # clean up first
-  sudo make install   # install mosquitto c lib
-  popd
 fi
+
+TMP_FOLDER="/tmp/mosquitto"
+
+rm -rf $TMP_FOLDER
+mkdir -p $TMP_FOLDER
+pushd $TMP_FOLDER
+git clone https://github.com/eclipse/paho.mqtt.c.git
+cd paho.mqtt.c
+make -j$(nproc)
+sudo make uninstall # clean up first
+sudo make install   # install mosquitto c lib
+popd
 
 # git submodule update --init
 git submodule update --init --recursive
