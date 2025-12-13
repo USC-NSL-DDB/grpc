@@ -44,4 +44,4 @@ cmake -DgRPC_INSTALL=ON \
   -DCMAKE_C_COMPILER=gcc-13 -DCMAKE_CXX_COMPILER=g++-13 \
   ../..
 make -j$(nproc)
-sudo make install
+make install
