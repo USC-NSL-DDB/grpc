@@ -39,6 +39,7 @@ export PATH="$MY_INSTALL_DIR/bin:$PATH"
 mkdir -p cmake/build
 pushd cmake/build
 cmake -G Ninja \
+  -DCMAKE_BUILD_TYPE=RelWithDebInfo \
   -DgRPC_INSTALL=ON \
   -DgRPC_BUILD_TESTS=OFF \
   -DCMAKE_INSTALL_PREFIX=$MY_INSTALL_DIR \
