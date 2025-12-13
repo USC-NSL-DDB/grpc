@@ -1,7 +1,7 @@
 #!/bin/bash
 
 sudo apt-get update
-sudo apt-get install -y build-essential gcc autoconf libtool pkg-config make cmake cmake-gui cmake-curses-gui git
+sudo apt-get install -y build-essential gcc autoconf libtool pkg-config make cmake cmake-gui cmake-curses-gui git ninja-build
 
 if [ "$1" = "setup-broker" ]; then
   sudo apt-add-repository -y ppa:mosquitto-dev/mosquitto-ppa
@@ -38,10 +38,12 @@ export PATH="$MY_INSTALL_DIR/bin:$PATH"
 # cd libs/grpc
 mkdir -p cmake/build
 pushd cmake/build
-cmake -DgRPC_INSTALL=ON \
-  -DgRPC_BUILD_TESTS=OFF \
+cmake -G Ninja \
+  -DBUILD_SHARED_LIBS=ON \
+  -DgRPC_INSTALL=ON \
+  -DgRPC_BUILD_TESTS=OFF -DgRPC_BUILD_GRPC_NODE_PLUGIN=OFF \
   -DCMAKE_INSTALL_PREFIX=$MY_INSTALL_DIR \
   -DCMAKE_C_COMPILER=gcc-13 -DCMAKE_CXX_COMPILER=g++-13 \
   ../..
-make -j$(nproc)
-make install
+cmake --build . --target install -- -j$(nproc)
+popd
