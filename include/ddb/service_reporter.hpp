@@ -1,27 +1,38 @@
 #pragma once
 
 #include <cstdint>
+#include <map>
 #include <string>
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <limits.h>
+#include <vector>
 
 #include <unistd.h>
 #include <MQTTClient.h>
 #include <string.h>
 
 #include "ddb/common.hpp"
+#include "ddb/picosha2.hpp"
 
 namespace DDB {
 constexpr static char CLIENTID[] = "s_";
 constexpr static char INI_FILEPATH[] = "/tmp/ddb/service_discovery/config";
-constexpr static uint8_t QOS = 1;
+constexpr static uint8_t QOS = 2;
 constexpr static uint32_t TIMEOUT = 10000L;
+
+static inline std::string default_ini_filepath() {
+    return std::string(INI_FILEPATH);
+}
 
 struct ServiceInfo {
     uint32_t ip;        // ip address
     std::string tag;    // tag name
     pid_t pid;          // process ID
+    std::string hash;   // hash value of the binary
+    std::string alias;  // alias name for the binary
+    std::map<std::string, std::string> user_data; // User-defined key-value pairs
 };
 
 struct DDBServiceReporter {
@@ -30,8 +41,8 @@ struct DDBServiceReporter {
     std::string topic;       // topic for pub
 };
 
-static inline int read_config_data(DDBServiceReporter* reporter) {
-    std::ifstream file(INI_FILEPATH);
+static inline int read_config_data(DDBServiceReporter* reporter, const std::string& ini_filepath) {
+    std::ifstream file(ini_filepath);
     if (!file.is_open()) {
         std::cerr << "Failed to open service discovery config file" << std::endl;
         return -1;
@@ -45,8 +56,8 @@ static inline int read_config_data(DDBServiceReporter* reporter) {
     return 0;
 }
 
-static inline int service_reporter_init(DDBServiceReporter* reporter) {
-    int rc = read_config_data(reporter);
+static inline int service_reporter_init(DDBServiceReporter* reporter, const std::string& ini_filepath = INI_FILEPATH) {
+    int rc = read_config_data(reporter, ini_filepath);
     if (rc != 0) return rc;
 
     MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
@@ -73,6 +84,36 @@ static inline int service_reporter_deinit(DDBServiceReporter* reporter) {
     return 0;
 }
 
+static inline std::string compute_sha256(const std::string& filename) {
+    std::ifstream file(filename, std::ios::binary);
+    if (!file) {
+        std::cerr << "Failed to open file: " << filename << std::endl;
+        return "";
+    }
+
+    std::vector<unsigned char> buffer(std::istreambuf_iterator<char>(file), {});
+    return picosha2::hash256_hex_string(buffer);
+}
+
+static inline std::string get_self_exe_path() {
+    char path[PATH_MAX];
+    ssize_t len = readlink("/proc/self/exe", path, sizeof(path) - 1);
+    if (len != -1) {
+        path[len] = '\0';
+        return std::string(path);
+    }
+    return "";
+}
+
+static inline std::string compute_self_hash() {
+    auto exe_path = get_self_exe_path();
+    if (exe_path.empty()) {
+        std::cerr << "Failed to get self executable path" << std::endl;
+        return "";
+    }
+    return compute_sha256(exe_path);
+}
+
 static inline int report_service(
     DDBServiceReporter* reporter, 
     const ServiceInfo* service_info
@@ -82,14 +123,23 @@ static inline int report_service(
     MQTTClient_message pubmsg = MQTTClient_message_initializer;
 
     std::stringstream ss;
-    ss << service_info->ip << ":" << service_info->tag << ":" << service_info->pid;
+
+    // payload format:
+    // ip:tag:pid:hash=alias:{<key>=<value>,...}
+    ss << service_info->ip << ":" << service_info->tag << ":" << service_info->pid << ":" << service_info->hash << "=" << service_info->alias;
+    if (!service_info->user_data.empty()) {
+        ss << ":{";
+        for (const auto& kv : service_info->user_data) {
+            ss << kv.first << "=" << kv.second << ",";
+        }
+        std::string user_data = ss.str();
+        user_data.pop_back(); // Remove the last comma
+        user_data += "}";
+        ss.str(user_data);
+    }
     std::string payload = ss.str();
 
-    // char payload[256];
-
-    // // Format the ServiceInfo struct fields into the buffer
-    // snprintf(payload, sizeof(payload), "%u:%s:%d",
-    //          service_info->ip, service_info->tag.c_str(), service_info->pid);
+    std::cout << "send payload: " << payload << std::endl;
 
     pubmsg.payload = (void*) payload.c_str();
     // pubmsg.payloadlen = (int) strlen(payload);
@@ -100,7 +150,6 @@ static inline int report_service(
     MQTTClient_deliveryToken token;
     MQTTClient_publishMessage(reporter->client, reporter->topic.c_str(), &pubmsg, &token);
     rc = MQTTClient_waitForCompletion(reporter->client, token, TIMEOUT);
-    printf("Message with delivery token %d delivered\n", token);
     return rc;
 }
 } // namespace DDB
