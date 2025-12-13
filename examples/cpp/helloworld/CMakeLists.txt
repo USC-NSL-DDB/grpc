@@ -21,6 +21,11 @@ cmake_minimum_required(VERSION 3.8)
 
 project(HelloWorld C CXX)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(grpc_prefix "$ENV{HOME}/.local")
+set(CMAKE_PREFIX_PATH ${grpc_prefix} CACHE PATH "grpc libs prefix path")
+set(CMAKE_BUILD_TYPE Debug)
+
 include(../cmake/common.cmake)
 
 # Proto file

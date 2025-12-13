@@ -16,16 +16,15 @@
  *
  */
 
+#include <ddb/integration.hpp>
+
 #include <iostream>
 #include <memory>
 #include <string>
 
-
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/strings/str_format.h"
-
-#include <ddb/integration.hpp>
 
 #include <grpcpp/ext/proto_server_reflection_plugin.h>
 #include <grpcpp/grpcpp.h>
@@ -46,6 +45,11 @@ using helloworld::HelloReply;
 using helloworld::HelloRequest;
 
 ABSL_FLAG(uint16_t, port, 50051, "Server port for the service");
+ABSL_FLAG(bool, ddb, false, "Enable DDB for debugging.");
+ABSL_FLAG(std::string, ddb_host_ip, "0.0.0.0",
+          "Host IP of this machine for DDB to connect to.");
+ABSL_FLAG(std::string, ddb_proc_alias, "greeter_client",
+          "Alias that will be used in DDB to identify this process.");
 
 // Logic and data behind the server's behavior.
 class GreeterServiceImpl final : public Greeter::Service {
@@ -81,8 +85,14 @@ void RunServer(uint16_t port) {
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
 
-  // auto connector = DDB::DDBConnector();
-  // connector.init("10.10.1.2", true);
+  if (absl::GetFlag(FLAGS_ddb)) {
+    auto cfg = DDB::Config::get_default(absl::GetFlag(FLAGS_ddb_host_ip))
+                   .with_alias(absl::GetFlag(FLAGS_ddb_proc_alias));
+    // cfg.auto_discovery = false;
+
+    auto connector = DDB::DDBConnector(cfg);
+    connector.init();
+  }
 
   RunServer(absl::GetFlag(FLAGS_port));
   return 0;

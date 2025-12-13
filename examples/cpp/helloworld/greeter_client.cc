@@ -16,14 +16,14 @@
  *
  */
 
+#include <ddb/integration.hpp>
+
 #include <iostream>
 #include <memory>
 #include <string>
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
-
-#include <ddb/integration.hpp>
 
 #include <grpcpp/grpcpp.h>
 
@@ -33,7 +33,12 @@
 #include "helloworld.grpc.pb.h"
 #endif
 
-ABSL_FLAG(std::string, target, "localhost:50051", "Server address");
+ABSL_FLAG(std::string, target, "localhost:50051", "Server address.");
+ABSL_FLAG(bool, ddb, false, "Enable DDB for debugging.");
+ABSL_FLAG(std::string, ddb_host_ip, "0.0.0.0",
+          "Host IP of this machine for DDB to connect to.");
+ABSL_FLAG(std::string, ddb_proc_alias, "greeter_client",
+          "Alias that will be used in DDB to identify this process.");
 
 using grpc::Channel;
 using grpc::ClientContext;
@@ -81,8 +86,14 @@ class GreeterClient {
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
 
-  // auto connector = DDB::DDBConnector();
-  // connector.init("10.10.1.2", true);
+  if (absl::GetFlag(FLAGS_ddb)) {
+    auto cfg = DDB::Config::get_default(absl::GetFlag(FLAGS_ddb_host_ip))
+                   .with_alias(absl::GetFlag(FLAGS_ddb_proc_alias));
+    // cfg.auto_discovery = false;
+
+    auto connector = DDB::DDBConnector(cfg);
+    connector.init();
+  }
 
   // Instantiate the client. It requires a channel, out of which the actual RPCs
   // are created. This channel models a connection to an endpoint specified by
