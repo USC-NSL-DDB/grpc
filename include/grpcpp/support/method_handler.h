@@ -120,30 +120,37 @@ class RpcMethodHandler : public grpc::internal::MethodHandler {
           return func_(
             service_,
             s_context,
-            static_cast<RequestType*>(param.request), 
+            static_cast<RequestType*>(param.request),
             &rsp
           );
         });
       };
 
-      status = DDB::Backtrace::extraction<::grpc::Status>(
-        [&s_context]() -> DDB::DDBTraceMeta {
-          auto& client_meta = s_context->client_metadata();
-          std::string stack_metadata;
-          for (auto const& kv: client_meta) {
-            if (kv.first == grpc::string_ref(std::string("bt_meta"))) {
-              stack_metadata = std::string(kv.second.data(), kv.second.size());
-              break;
+      auto& client_meta = s_context->client_metadata();
+      std::string stack_metadata;
+      for (auto const& kv: client_meta) {
+        if (kv.first == grpc::string_ref(std::string("bt_meta"))) {
+          stack_metadata = std::string(kv.second.data(), kv.second.size());
+          break;
+        }
+      }
+
+      if (stack_metadata.empty()) {
+        // Original path: no DDB metadata, so bypass DDB extraction entirely.
+        status = rpc_handler_wrapper();
+      } else {
+        status = DDB::Backtrace::extraction<::grpc::Status>(
+          [&stack_metadata]() -> DDB::DDBTraceMeta {
+            DDB::DDBTraceMeta meta;
+            if (!stack_metadata.empty()) {
+              meta = DDB::deserialize_from_str(stack_metadata);
             }
-          }
-          DDB::DDBTraceMeta meta;
-          if (!stack_metadata.empty()) {
-            meta = DDB::deserialize_from_str(stack_metadata);
-          }
-          return meta;
-        },
-        rpc_handler_wrapper
-      );
+            return meta;
+          },
+          rpc_handler_wrapper
+        );
+      }
+
       // status = CatchingFunctionHandler([this, &param, &rsp] {
       //   return func_(service_,
       //                static_cast<grpc::ServerContext*>(param.server_context),
