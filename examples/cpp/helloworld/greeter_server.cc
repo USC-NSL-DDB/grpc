@@ -46,7 +46,7 @@ using helloworld::HelloRequest;
 
 ABSL_FLAG(uint16_t, port, 50051, "Server port for the service");
 ABSL_FLAG(bool, ddb, false, "Enable DDB for debugging.");
-ABSL_FLAG(std::string, ddb_host_ip, "0.0.0.0",
+ABSL_FLAG(std::string, ddb_host_ip, "127.0.0.1",
           "Host IP of this machine for DDB to connect to.");
 ABSL_FLAG(std::string, ddb_proc_alias, "greeter_client",
           "Alias that will be used in DDB to identify this process.");
