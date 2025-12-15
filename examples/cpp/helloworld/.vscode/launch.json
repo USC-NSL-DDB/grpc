@@ -9,7 +9,7 @@
 			"ddbpath": "${env:HOME}/.cargo/bin/ddb",
 			"configFilePath":"${workspaceFolder}/.ddb/dbg_grpc.yaml",
 			// "debugger_args": [ "--console-log", "--console-level", "debug" ],
-			"debugger_args": [ "--console-log", "--console-level", "error", "--file-level", "trace" ],
+			"debugger_args": [ "--console-log", "--console-level", "error", "--file-level", "info" ],
 			// "debugger_args": [ "--file-level", "debug" ],
 			"valuesFormatting": "prettyPrinters",
 		}, 
